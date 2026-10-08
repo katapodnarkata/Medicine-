@@ -1,0 +1,50 @@
+{
+  "expo": {
+    "name": "Оповещение команды",
+    "slug": "team-alert",
+    "scheme": "teamalert",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.medicine.teamalert",
+      "infoPlist": {
+        "UIBackgroundModes": [
+          "remote-notification"
+        ]
+      }
+    },
+    "android": {
+      "package": "com.medicine.teamalert",
+      "adaptiveIcon": {
+        "backgroundColor": "#B71C1C",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "VIBRATE",
+        "POST_NOTIFICATIONS"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-notifications",
+        {
+          "color": "#B71C1C",
+          "defaultChannel": "calls"
+        }
+      ]
+    ],
+    "extra": {
+      "apiUrl": "http://192.168.0.10:3000",
+      "eas": {
+        "projectId": ""
+      }
+    }
+  }
+}
