@@ -13,6 +13,9 @@
         "UIBackgroundModes": [
           "remote-notification"
         ]
+      },
+      "config": {
+        "usesNonExemptEncryption": false
       }
     },
     "android": {
@@ -36,7 +39,8 @@
         "expo-notifications",
         {
           "color": "#B71C1C",
-          "defaultChannel": "calls"
+          "defaultChannel": "calls",
+          "mode": "production"
         }
       ]
     ],

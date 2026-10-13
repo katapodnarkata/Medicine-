@@ -11,6 +11,7 @@ interface AuthState {
   user: User | null;
   signIn: (token: string, user: User) => Promise<void>;
   signOut: () => Promise<void>;
+  deleteAccount: () => Promise<void>;
   setUser: (user: User) => void;
   refresh: () => Promise<void>;
 }
@@ -63,13 +64,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await forget();
   }, [forget]);
 
+  const deleteAccount = useCallback(async () => {
+    await api.deleteMe();
+    await forget();
+  }, [forget]);
+
   const refresh = useCallback(async () => {
     setUser(await api.me());
   }, [setUser]);
 
   const value = useMemo(
-    () => ({ loading, user, signIn, signOut, setUser, refresh }),
-    [loading, user, signIn, signOut, setUser, refresh],
+    () => ({ loading, user, signIn, signOut, deleteAccount, setUser, refresh }),
+    [loading, user, signIn, signOut, deleteAccount, setUser, refresh],
   );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

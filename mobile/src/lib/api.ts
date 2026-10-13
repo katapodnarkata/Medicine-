@@ -57,6 +57,7 @@ export const api = {
     request<User>('PATCH', '/api/me', data),
   setPushToken: (token: string | null) => request<void>('PUT', '/api/me/push-token', { token }),
   logout: () => request<void>('POST', '/api/logout'),
+  deleteMe: () => request<void>('DELETE', '/api/me'),
 
   teams: () => request<Team[]>('GET', '/api/teams'),
   createTeam: (name: string) => request<Team>('POST', '/api/teams', { name }),

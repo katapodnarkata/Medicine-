@@ -43,8 +43,7 @@ CREATE TABLE IF NOT EXISTS calls (
   place           TEXT,
   text            TEXT NOT NULL,
   created_at      INTEGER NOT NULL,
-  expires_at      INTEGER NOT NULL,
-  sms_processed   INTEGER NOT NULL DEFAULT 0
+  expires_at      INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS calls_dispatcher ON calls(dispatcher_id, team_id, expires_at);
 CREATE INDEX IF NOT EXISTS calls_created ON calls(created_at);
@@ -58,8 +57,6 @@ CREATE TABLE IF NOT EXISTS call_recipients (
   phone           TEXT NOT NULL,
   push_token      TEXT,
   acknowledged_at INTEGER,
-  sms_sent_at     INTEGER,
-  sms_error       TEXT,
   push_error      TEXT,
   PRIMARY KEY (call_id, user_id)
 );

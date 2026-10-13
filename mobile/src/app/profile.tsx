@@ -9,7 +9,7 @@ import type { Role } from '../lib/types';
 
 /** Просмотр и изменение собственных данных (п.3). Изменяется существующий пользователь. */
 export default function Profile() {
-  const { user, setUser, signOut } = useAuth();
+  const { user, setUser, signOut, deleteAccount } = useAuth();
   const [name, setName] = useState(user?.name ?? '');
   const [phone, setPhone] = useState(user?.phone ?? '');
   const [role, setRole] = useState<Role>(user?.role ?? 'participant');
@@ -44,6 +44,20 @@ export default function Profile() {
       { text: 'Выйти', style: 'destructive', onPress: () => void signOut() },
     ]);
 
+  const confirmDelete = () =>
+    Alert.alert(
+      'Удалить аккаунт?',
+      'Ваши данные будут удалены с сервера, вызовы перестанут приходить. Это действие нельзя отменить.',
+      [
+        { text: 'Отмена', style: 'cancel' },
+        {
+          text: 'Удалить',
+          style: 'destructive',
+          onPress: () => deleteAccount().catch((err) => setError(errorMessage(err))),
+        },
+      ],
+    );
+
   return (
     <Screen>
       <Field label="Имя" value={name} onChangeText={setName} />
@@ -66,6 +80,7 @@ export default function Profile() {
       {saved ? <Muted>✓ Изменения сохранены</Muted> : null}
       <Button title="Сохранить" onPress={save} busy={busy} />
       <Button title="Выйти" variant="secondary" onPress={logout} />
+      <Button title="Удалить аккаунт" variant="danger" onPress={confirmDelete} />
     </Screen>
   );
 }

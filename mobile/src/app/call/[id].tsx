@@ -108,7 +108,7 @@ function DispatcherView({ call }: { call: Call }) {
             <ListItem
               key={r.userId}
               title={r.name}
-              subtitle={r.smsSent ? `${r.phone} · отправлено SMS` : r.phone}
+              subtitle={r.phone}
               right={<StatusBadge seen={r.status === 'seen'} />}
             />
           ))}

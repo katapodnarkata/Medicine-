@@ -1,14 +1,8 @@
 import { createHash, randomBytes } from 'node:crypto';
-import {
-  CALL_DURATION_MS,
-  HISTORY_TTL_MS,
-  RECIPIENTS_TTL_MS,
-  SMS_DELAY_MS,
-} from './config.js';
+import { CALL_DURATION_MS, HISTORY_TTL_MS, RECIPIENTS_TTL_MS } from './config.js';
 import { transaction, type Db } from './db.js';
 import { CAR_PLACE, callText } from './messages.js';
 import type { PushSender } from './push.js';
-import type { SmsSender } from './sms.js';
 
 export type Role = 'dispatcher' | 'participant';
 export type CallKind = 'car' | 'place';
@@ -52,7 +46,6 @@ interface RecipientRow {
   phone: string;
   push_token: string | null;
   acknowledged_at: number | null;
-  sms_sent_at: number | null;
 }
 
 export interface UserDto {
@@ -76,7 +69,6 @@ export interface RecipientDto {
   name: string;
   phone: string;
   status: RecipientStatus;
-  smsSent: boolean;
 }
 
 export interface CallDto {
@@ -141,7 +133,6 @@ export class Service {
   constructor(
     private readonly db: Db,
     private readonly push: PushSender,
-    private readonly sms: SmsSender,
     readonly now: () => number = Date.now,
   ) {}
 
@@ -191,6 +182,14 @@ export class Service {
   logout(token: string, userId: number): void {
     this.db.prepare('DELETE FROM sessions WHERE token_hash = ?').run(hashToken(token));
     this.db.prepare('UPDATE users SET push_token = NULL WHERE id = ?').run(userId);
+  }
+
+  /**
+   * Удаление собственного аккаунта (требование App Store). Уже созданные
+   * вызовы не изменяются: получатели хранятся снимком.
+   */
+  deleteMe(userId: number): void {
+    this.db.prepare('DELETE FROM users WHERE id = ?').run(userId);
   }
 
   getUser(userId: number): UserDto {
@@ -461,46 +460,6 @@ export class Service {
 
   // ---------- Фоновые задачи ----------
 
-  /**
-   * SMS-резерв (п.10): через 10 секунд после отправки SMS получают только те,
-   * кто к этому моменту не нажал «Я УВИДЕЛ». Каждый вызов обрабатывается один раз.
-   */
-  async processSms(): Promise<number> {
-    const now = this.now();
-    const jobs = transaction(this.db, () => {
-      const due = this.db
-        .prepare('SELECT id, text FROM calls WHERE sms_processed = 0 AND created_at <= ?')
-        .all(now - SMS_DELAY_MS) as { id: number; text: string }[];
-      const result: { callId: number; userId: number; phone: string; text: string }[] = [];
-      for (const call of due) {
-        this.db.prepare('UPDATE calls SET sms_processed = 1 WHERE id = ?').run(call.id);
-        const pending = this.db
-          .prepare('SELECT user_id, phone FROM call_recipients WHERE call_id = ? AND acknowledged_at IS NULL')
-          .all(call.id) as { user_id: number; phone: string }[];
-        for (const p of pending) result.push({ callId: call.id, userId: p.user_id, phone: p.phone, text: call.text });
-      }
-      return result;
-    });
-
-    await Promise.all(
-      jobs.map(async (job) => {
-        try {
-          await this.sms.send(job.phone, job.text);
-          this.db
-            .prepare('UPDATE call_recipients SET sms_sent_at = ? WHERE call_id = ? AND user_id = ?')
-            .run(this.now(), job.callId, job.userId);
-        } catch (err) {
-          const message = err instanceof Error ? err.message : String(err);
-          console.error(`[SMS] ошибка отправки на ${job.phone}: ${message}`);
-          this.db
-            .prepare('UPDATE call_recipients SET sms_error = ? WHERE call_id = ? AND user_id = ?')
-            .run(message, job.callId, job.userId);
-        }
-      }),
-    );
-    return jobs.length;
-  }
-
   /** Очистка (п.14): получатели — через 24 часа, вызовы — через 3 дня. */
   cleanup(): void {
     const now = this.now();
@@ -538,7 +497,6 @@ export class Service {
           name: r.name,
           phone: r.phone,
           status: r.acknowledged_at ? 'seen' : 'pending',
-          smsSent: r.sms_sent_at != null,
         }));
       }
     }

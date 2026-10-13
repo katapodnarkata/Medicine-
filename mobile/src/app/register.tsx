@@ -34,7 +34,7 @@ export default function Register() {
   return (
     <Screen>
       <Title>Оповещение команды</Title>
-      <Muted>Номер телефона нужен для SMS, если вызов не подтверждён в приложении.</Muted>
+      <Muted>Зарегистрируйтесь, чтобы получать и отправлять вызовы команды.</Muted>
       <Field label="Имя" value={name} onChangeText={setName} placeholder="Иван Иванов" autoComplete="name" />
       <Field
         label="Номер телефона"

@@ -3,11 +3,11 @@
 
 Диспетчер отправляет вызов выбранной команде, участники получают push-уведомление
 и подтверждают его кнопкой **«Я УВИДЕЛ»**, диспетчер видит статус каждого получателя.
-Если участник не подтвердил вызов за 10 секунд, ему уходит SMS.
+SMS-резерв (п.10 ТЗ) по решению заказчика не используется.
 
 ```
 mobile/   мобильное приложение (Expo / React Native, Android и iOS)
-server/   сервер (Node.js 22, Express, SQLite) — вызовы, push, SMS, история
+server/   сервер (Node.js 22, Express, SQLite) — вызовы, push, история
 ```
 
 ## Архитектура
@@ -17,13 +17,12 @@ server/   сервер (Node.js 22, Express, SQLite) — вызовы, push, SMS
                                  │  ▲                                │
                                  │  └──POST /api/calls/:id/ack───────┘ «Я УВИДЕЛ»
                                  │
-                                 ├─ через 10 с: SMS неподтвердившим (sms.ru / Twilio)
                                  ├─ через 5 мин: вызов завершается
                                  └─ очистка: получатели — 24 ч, вызовы — 72 ч
 ```
 
 * Сервер хранит данные в SQLite (встроенный модуль `node:sqlite`, без нативных зависимостей).
-* Таймеры SMS и очистки работают по данным в базе, поэтому переживают перезапуск сервера.
+* Очистка истории работает по данным в базе, поэтому переживает перезапуск сервера.
 * Push-уведомления отправляются через Expo Push Service, который доставляет их
   на Android (Firebase Cloud Messaging) и iOS (Apple Push Notification service)
   при открытом, свёрнутом и закрытом приложении.
@@ -35,7 +34,7 @@ server/   сервер (Node.js 22, Express, SQLite) — вызовы, push, SMS
 ```bash
 cd server
 npm install
-cp .env.example .env      # настройте SMS-провайдера и т.д.
+cp .env.example .env      # при необходимости измените настройки
 npm run dev               # разработка
 npm test                  # тесты по критериям готовности ТЗ
 npm run build && npm start
@@ -56,11 +55,9 @@ docker run -p 3000:3000 -v team-alert-data:/data --env-file server/.env team-ale
 | `DB_PATH` | Файл базы SQLite (по умолчанию `./data/team-alert.db`) |
 | `SEED_TEAMS` | Команды, создаваемые при первом запуске, через запятую |
 | `EXPO_ACCESS_TOKEN` | Токен Expo, если включена Enhanced Push Security |
-| `SMS_PROVIDER` | `console` (SMS пишутся в журнал), `smsru` или `twilio` |
-| `SMSRU_API_ID`, `SMSRU_FROM` | Настройки [sms.ru](https://sms.ru) |
-| `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM` | Настройки Twilio |
 
 В продакшене сервер должен работать за HTTPS (например, nginx / Caddy с сертификатом).
+iPhone по умолчанию не подключается к серверам без HTTPS.
 
 ### API
 
@@ -69,7 +66,7 @@ docker run -p 3000:3000 -v team-alert-data:/data --env-file server/.env team-ale
 | Метод | Путь | Назначение |
 |---|---|---|
 | POST | `/api/register` | Регистрация `{name, phone, role}` → `{token, user}` |
-| GET / PATCH | `/api/me` | Профиль; изменение `{name, phone, role, teamId}` |
+| GET / PATCH / DELETE | `/api/me` | Профиль; изменение `{name, phone, role, teamId}`; удаление своего аккаунта |
 | PUT | `/api/me/push-token` | Push-токен устройства |
 | POST | `/api/logout` | Выход |
 | GET / POST | `/api/teams` | Список команд / создание команды (диспетчер) |
@@ -100,6 +97,7 @@ Push-уведомления не работают в Expo Go, поэтому н�
    в `app.json` → `android`; загрузите ключ сервисного аккаунта FCM v1 в Expo
    (`npx eas-cli@latest credentials`).
 3. **iOS:** нужен Apple Developer аккаунт; ключ APNs EAS создаст сам при первой сборке.
+   Пошаговая инструкция для iPhone — в [docs/apple.md](docs/apple.md).
 4. Сборка:
    ```bash
    npx eas-cli@latest build --profile development --platform all   # для разработки
@@ -121,7 +119,7 @@ Push-уведомления не работают в Expo Go, поэтому н�
 | Выбор команды | `src/app/teams.tsx` |
 | Управление командой, добавление, перевод | `src/app/team.tsx`, `add-member.tsx`, `move/[userId].tsx` |
 | Главный экран участника | `src/app/participant.tsx` |
-| Профиль | `src/app/profile.tsx` |
+| Профиль (в т.ч. удаление аккаунта) | `src/app/profile.tsx` |
 | История | `src/app/history.tsx` |
 
 ## Соответствие критериям готовности
@@ -137,7 +135,7 @@ Push-уведомления не работают в Expo Go, поэтому н�
 | 7 | Push всем участникам | `Service.sendPushes`, канал Android `calls` (звук + вибрация) |
 | 8 | «Я УВИДЕЛ» | `call/[id].tsx` → `POST /api/calls/:id/ack` |
 | 9 | Диспетчер видит подтверждения | `call/[id].tsx`, обновление каждые 2 с: УВИДЕЛ / НЕ ПОДТВЕРДИЛ |
-| 10–11 | SMS через 10 с только неподтвердившим | `Service.processSms`, запускается каждую секунду |
+| 10–11 | SMS через 10 с только неподтвердившим | отменено заказчиком |
 | 12 | Завершение через 5 минут; новый вызов — только после завершения | `expires_at`, проверка в `Service.createCall` |
 | 13 | Независимость диспетчеров | ограничение действует на пару «диспетчер + команда» |
 | 14–15 | История 3 дня, получатели 24 часа | `Service.cleanup`, фильтрация в запросах |
@@ -162,4 +160,6 @@ Push-уведомления не работают в Expo Go, поэтому н�
   (и другие команды) не блокируются.
 * «К машине» на экране выбора места отправляет тот же вызов, что и кнопка «ОТПРАВИТЬ ВЫЗОВ».
 * Участник может подтвердить вызов, только пока он активен (5 минут).
+* **SMS-резерв** (п.10–11 ТЗ) отключён по решению заказчика; номер телефона остаётся в профиле.
+* **Удаление аккаунта** самим пользователем добавлено по требованию App Store (правило 5.1.1(v)).
 * Push используют обычный звук и уровень важности: режимы «Не беспокоить» и беззвучный не обходятся.

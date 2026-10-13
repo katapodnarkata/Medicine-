@@ -61,6 +61,15 @@ describe('регистрация и профиль', () => {
     assert.equal(me.body.name, 'Анна Петрова');
   });
 
+  it('пользователь может удалить свой аккаунт', async () => {
+    const d = await h.register('Анна', '+79001112233', 'participant');
+    assert.equal((await h.api('DELETE', '/api/me', d.token)).status, 204);
+    assert.equal((await h.api('GET', '/api/me', d.token)).status, 401);
+    // Тот же номер можно зарегистрировать заново — это будет новый аккаунт.
+    const again = await h.register('Анна', '+79001112233', 'participant');
+    assert.notEqual(again.user.id, d.user.id);
+  });
+
   it('не даёт занять чужой номер телефона', async () => {
     await h.register('Анна', '+79001112233', 'participant');
     const b = await h.register('Борис', '+79001112244', 'participant');
@@ -156,28 +165,6 @@ describe('вызовы', () => {
     const byId = new Map(view.body.recipients.map((r: any) => [r.userId, r.status]));
     assert.equal(byId.get(members[0].user.id), 'seen');
     assert.equal(byId.get(members[1].user.id), 'pending');
-  });
-
-  it('SMS через 10 секунд только неподтвердившим (критерии 10, 11)', async () => {
-    const { dispatcher, members } = await setup(3);
-    const call = (await h.api('POST', '/api/calls', dispatcher.token, { kind: 'place', place: 'Приёмный покой' })).body;
-    h.clock.now += 5 * SEC;
-    await h.api('POST', `/api/calls/${call.id}/ack`, members[0].token);
-    assert.equal(await h.service.processSms(), 0);
-    h.clock.now += 4.9 * SEC;
-    assert.equal(await h.service.processSms(), 0);
-    h.clock.now += 0.1 * SEC;
-    assert.equal(await h.service.processSms(), 2);
-    assert.deepEqual(h.sms.sent.map((s) => s.phone).sort(), [members[1].user.phone, members[2].user.phone].sort());
-    assert.ok(h.sms.sent.every((s) => s.text === call.text));
-    // Повторно SMS не отправляются.
-    h.clock.now += 30 * SEC;
-    assert.equal(await h.service.processSms(), 0);
-    const view = await h.api('GET', `/api/calls/${call.id}`, dispatcher.token);
-    assert.deepEqual(
-      view.body.recipients.filter((r: any) => r.smsSent).map((r: any) => r.userId).sort(),
-      [members[1].user.id, members[2].user.id].sort(),
-    );
   });
 
   it('вызов завершается через 5 минут и блокирует новый до завершения (критерий 12)', async () => {

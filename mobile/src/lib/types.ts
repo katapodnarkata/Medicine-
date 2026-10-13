@@ -21,7 +21,6 @@ export interface Recipient {
   name: string;
   phone: string;
   status: RecipientStatus;
-  smsSent: boolean;
 }
 
 export interface Call {

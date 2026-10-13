@@ -4,7 +4,6 @@ import { createApp } from '../src/app.js';
 import { openDb, seedTeams } from '../src/db.js';
 import type { PushMessage, PushResult, PushSender } from '../src/push.js';
 import { Service } from '../src/service.js';
-import type { SmsSender } from '../src/sms.js';
 
 export class FakePush implements PushSender {
   sent: PushMessage[] = [];
@@ -14,17 +13,9 @@ export class FakePush implements PushSender {
   }
 }
 
-export class FakeSms implements SmsSender {
-  sent: { phone: string; text: string }[] = [];
-  async send(phone: string, text: string): Promise<void> {
-    this.sent.push({ phone, text });
-  }
-}
-
 export interface Harness {
   service: Service;
   push: FakePush;
-  sms: FakeSms;
   clock: { now: number };
   api: (method: string, path: string, token?: string, body?: unknown) => Promise<{ status: number; body: any }>;
   register: (name: string, phone: string, role: 'dispatcher' | 'participant') => Promise<{ token: string; user: any }>;
@@ -36,8 +27,7 @@ export async function startHarness(): Promise<Harness> {
   const db = openDb(':memory:');
   seedTeams(db, ['Команда 1', 'Команда 2'], clock.now);
   const push = new FakePush();
-  const sms = new FakeSms();
-  const service = new Service(db, push, sms, () => clock.now);
+  const service = new Service(db, push, () => clock.now);
   const server: Server = await new Promise((resolve) => {
     const s = createApp(service).listen(0, () => resolve(s));
   });
@@ -65,7 +55,6 @@ export async function startHarness(): Promise<Harness> {
   return {
     service,
     push,
-    sms,
     clock,
     api,
     register,

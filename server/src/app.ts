@@ -45,6 +45,10 @@ export function createApp(service: Service) {
   app.patch('/api/me', (req, res) => {
     res.json(service.updateMe(user(req).id, req.body ?? {}));
   });
+  app.delete('/api/me', (req, res) => {
+    service.deleteMe(user(req).id);
+    res.status(204).end();
+  });
   app.put('/api/me/push-token', (req, res) => {
     service.setPushToken(user(req).id, req.body?.token ?? null);
     res.status(204).end();
