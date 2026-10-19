@@ -49,6 +49,15 @@
       "eas": {
         "projectId": ""
       }
+    },
+    "web": {
+      "output": "single",
+      "favicon": "./assets/favicon.png",
+      "name": "Оповещение команды",
+      "shortName": "Оповещение",
+      "themeColor": "#C62828",
+      "backgroundColor": "#F4F5F7",
+      "lang": "ru"
     }
   }
 }

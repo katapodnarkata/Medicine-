@@ -1,0 +1,29 @@
+# Запуск на сервере: docker compose up -d --build  (из папки deploy)
+services:
+  app:
+    build: ..
+    restart: unless-stopped
+    environment:
+      VAPID_SUBJECT: ${VAPID_SUBJECT:-mailto:admin@example.com}
+      SEED_TEAMS: ${SEED_TEAMS:-Команда 1,Команда 2,Команда 3}
+    volumes:
+      - app-data:/data
+
+  # Caddy принимает запросы из интернета и сам получает сертификат HTTPS (Let's Encrypt).
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:?Укажите DOMAIN в файле deploy/.env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+    depends_on:
+      - app
+
+volumes:
+  app-data:
+  caddy-data:

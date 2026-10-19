@@ -233,7 +233,7 @@ export class Service {
   }
 
   setPushToken(userId: number, token: unknown): void {
-    if (token !== null && (typeof token !== 'string' || !token || token.length > 512)) {
+    if (token !== null && (typeof token !== 'string' || !token || token.length > 4096)) {
       throw new AppError(400, 'Некорректный push-токен');
     }
     transaction(this.db, () => {

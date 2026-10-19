@@ -1,8 +1,8 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert } from 'react-native';
 import { Button, ErrorText, Field, Label, ListItem, Muted, Screen, Segmented } from '../components/ui';
 import { api, errorMessage } from '../lib/api';
+import { confirmAction } from '../lib/confirm';
 import { useAuth } from '../lib/auth';
 import { usePolling } from '../lib/hooks';
 import type { Role } from '../lib/types';
@@ -39,23 +39,14 @@ export default function Profile() {
   };
 
   const logout = () =>
-    Alert.alert('Выйти?', 'На этом устройстве перестанут приходить вызовы.', [
-      { text: 'Отмена', style: 'cancel' },
-      { text: 'Выйти', style: 'destructive', onPress: () => void signOut() },
-    ]);
+    confirmAction('Выйти?', 'На этом устройстве перестанут приходить вызовы.', 'Выйти', () => void signOut());
 
   const confirmDelete = () =>
-    Alert.alert(
+    confirmAction(
       'Удалить аккаунт?',
       'Ваши данные будут удалены с сервера, вызовы перестанут приходить. Это действие нельзя отменить.',
-      [
-        { text: 'Отмена', style: 'cancel' },
-        {
-          text: 'Удалить',
-          style: 'destructive',
-          onPress: () => deleteAccount().catch((err) => setError(errorMessage(err))),
-        },
-      ],
+      'Удалить',
+      () => void deleteAccount().catch((err) => setError(errorMessage(err))),
     );
 
   return (

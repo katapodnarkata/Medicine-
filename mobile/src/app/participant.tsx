@@ -1,17 +1,17 @@
 import { router } from 'expo-router';
 import { useCallback } from 'react';
 import { View } from 'react-native';
-import { Button, Card, ErrorText, Label, ListItem, Muted, Screen, StatusBadge, Title } from '../components/ui';
+import { Button, Card, ErrorText, Label, ListItem, Muted, PushBanner, Screen, StatusBadge, Title } from '../components/ui';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { formatRemaining } from '../lib/format';
 import { useNow, usePolling } from '../lib/hooks';
-import { usePushProblem } from '../lib/pushStatus';
+import { usePushStatus } from '../lib/pushStatus';
 
 export default function ParticipantHome() {
   const { user, refresh } = useAuth();
   const now = useNow();
-  const pushProblem = usePushProblem();
+  const pushStatus = usePushStatus();
   const load = useCallback(async () => {
     // Обновляем профиль: диспетчер мог перевести участника в другую команду.
     await refresh().catch(() => undefined);
@@ -27,11 +27,7 @@ export default function ParticipantHome() {
         <Title>{user?.team ? user.team.name : 'Вы не состоите в команде'}</Title>
         {!user?.team ? <Muted>Выберите команду в профиле или попросите диспетчера добавить вас.</Muted> : null}
       </Card>
-      {pushProblem ? (
-        <Card style={{ backgroundColor: '#FFF4E5' }}>
-          <Muted>⚠️ {pushProblem}</Muted>
-        </Card>
-      ) : null}
+      <PushBanner problem={pushStatus.problem} enable={pushStatus.enable} />
 
       <Label>Активные вызовы</Label>
       {active.length === 0 ? <Muted>Сейчас вызовов нет. При вызове придёт уведомление.</Muted> : null}

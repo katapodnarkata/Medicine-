@@ -5,15 +5,21 @@
 и подтверждают его кнопкой **«Я УВИДЕЛ»**, диспетчер видит статус каждого получателя.
 SMS-резерв (п.10 ТЗ) по решению заказчика не используется.
 
+**Основной способ распространения — веб-приложение (PWA):** его открывают по ссылке и
+устанавливают на экран «Домой» iPhone или Android. App Store, TestFlight и подписка Apple не нужны.
+Запуск на сервере — пошагово в [docs/deploy.md](docs/deploy.md).
+
 ```
-mobile/   мобильное приложение (Expo / React Native, Android и iOS)
-server/   сервер (Node.js 22, Express, SQLite) — вызовы, push, история
+mobile/   приложение (Expo / React Native): веб-версия (PWA), а также Android и iOS
+server/   сервер (Node.js 22, Express, SQLite) — вызовы, push, история; раздаёт веб-приложение
+deploy/   запуск на сервере: Docker Compose + Caddy (автоматический HTTPS)
+docs/     инструкции: запуск на сервере, выпуск в App Store, политика конфиденциальности
 ```
 
 ## Архитектура
 
 ```
-Диспетчер ──POST /api/calls──▶ Сервер ──Expo Push (FCM/APNs)──▶ Участники
+Диспетчер ──POST /api/calls──▶ Сервер ──Web Push / Expo Push──▶ Участники
                                  │  ▲                                │
                                  │  └──POST /api/calls/:id/ack───────┘ «Я УВИДЕЛ»
                                  │
@@ -23,9 +29,11 @@ server/   сервер (Node.js 22, Express, SQLite) — вызовы, push, и�
 
 * Сервер хранит данные в SQLite (встроенный модуль `node:sqlite`, без нативных зависимостей).
 * Очистка истории работает по данным в базе, поэтому переживает перезапуск сервера.
-* Push-уведомления отправляются через Expo Push Service, который доставляет их
-  на Android (Firebase Cloud Messaging) и iOS (Apple Push Notification service)
-  при открытом, свёрнутом и закрытом приложении.
+* **Веб-приложение** получает уведомления через Web Push (ключи VAPID создаются сервером
+  автоматически). Их показывает service worker (`mobile/public/sw.js`) — в том числе когда
+  приложение закрыто. На iPhone нужна iOS 16.4+ и установка на экран «Домой» из Safari.
+* **Нативные сборки** (если понадобятся) получают уведомления через Expo Push Service
+  (Firebase Cloud Messaging / Apple Push Notification service). Сервер сам выбирает службу по виду токена.
 
 ## Сервер
 
@@ -40,12 +48,14 @@ npm test                  # тесты по критериям готовнос�
 npm run build && npm start
 ```
 
-Или в Docker:
+Сервер вместе с веб-приложением в Docker (образ собирается из корня репозитория):
 
 ```bash
-docker build -t team-alert-server server
-docker run -p 3000:3000 -v team-alert-data:/data --env-file server/.env team-alert-server
+docker build -t team-alert .
+docker run -p 3000:3000 -v team-alert-data:/data team-alert
 ```
+
+Для работы в интернете с HTTPS используйте `deploy/` — см. [docs/deploy.md](docs/deploy.md).
 
 ### Переменные окружения
 
@@ -54,7 +64,10 @@ docker run -p 3000:3000 -v team-alert-data:/data --env-file server/.env team-ale
 | `PORT` | Порт HTTP (по умолчанию 3000) |
 | `DB_PATH` | Файл базы SQLite (по умолчанию `./data/team-alert.db`) |
 | `SEED_TEAMS` | Команды, создаваемые при первом запуске, через запятую |
-| `EXPO_ACCESS_TOKEN` | Токен Expo, если включена Enhanced Push Security |
+| `WEB_DIR` | Папка со сборкой веб-приложения; сервер раздаёт её по всем адресам, кроме `/api` |
+| `VAPID_SUBJECT` | Контакт для служб Web Push, например `mailto:you@example.com` |
+| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` | Ключи Web Push; если не заданы — создаются в `vapid.json` рядом с базой |
+| `EXPO_ACCESS_TOKEN` | Токен Expo (только для нативных сборок), если включена Enhanced Push Security |
 
 В продакшене сервер должен работать за HTTPS (например, nginx / Caddy с сертификатом).
 iPhone по умолчанию не подключается к серверам без HTTPS.
@@ -67,7 +80,8 @@ iPhone по умолчанию не подключается к серверам
 |---|---|---|
 | POST | `/api/register` | Регистрация `{name, phone, role}` → `{token, user}` |
 | GET / PATCH / DELETE | `/api/me` | Профиль; изменение `{name, phone, role, teamId}`; удаление своего аккаунта |
-| PUT | `/api/me/push-token` | Push-токен устройства |
+| PUT | `/api/me/push-token` | Push-токен устройства или Web Push-подписка браузера (JSON) |
+| GET | `/api/push/public-key` | Открытый ключ Web Push (без авторизации) |
 | POST | `/api/logout` | Выход |
 | GET / POST | `/api/teams` | Список команд / создание команды (диспетчер) |
 | GET | `/api/teams/:id/members` | Состав команды |
@@ -80,7 +94,22 @@ iPhone по умолчанию не подключается к серверам
 | POST | `/api/calls/:id/ack` | «Я УВИДЕЛ» |
 | GET | `/api/calls/history` | История за 3 дня |
 
-## Мобильное приложение
+## Веб-приложение (PWA)
+
+Собирается из того же кода, что и мобильное приложение:
+
+```bash
+cd mobile
+npm install
+npx expo export --platform web --output-dir dist      # сборка в mobile/dist
+cd ../server && WEB_DIR=../mobile/dist npm run dev    # сервер + веб-приложение на http://localhost:3000
+```
+
+Особенности веб-версии — файлы с окончанием `.web.ts` (браузер выбирает их вместо обычных):
+`src/lib/notifications.web.ts` (Web Push), `src/lib/storage.web.ts` (хранение входа).
+PWA-обвязка лежит в `mobile/public/`: `manifest.webmanifest`, `sw.js`, значки, `index.html`.
+
+## Мобильное приложение (нативные сборки, по желанию)
 
 ```bash
 cd mobile
@@ -160,6 +189,8 @@ Push-уведомления не работают в Expo Go, поэтому н�
   (и другие команды) не блокируются.
 * «К машине» на экране выбора места отправляет тот же вызов, что и кнопка «ОТПРАВИТЬ ВЫЗОВ».
 * Участник может подтвердить вызов, только пока он активен (5 минут).
+* **Веб-приложение (PWA) вместо App Store** — по решению заказчика, чтобы не платить Apple 99 $/год.
+  На iPhone уведомления приходят только после установки на экран «Домой» (iOS 16.4+); приложение подсказывает это само.
 * **SMS-резерв** (п.10–11 ТЗ) отключён по решению заказчика; номер телефона остаётся в профиле.
 * **Удаление аккаунта** самим пользователем добавлено по требованию App Store (правило 5.1.1(v)).
 * Push используют обычный звук и уровень важности: режимы «Не беспокоить» и беззвучный не обходятся.

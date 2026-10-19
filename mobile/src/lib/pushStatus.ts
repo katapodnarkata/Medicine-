@@ -1,5 +1,11 @@
 import { createContext, useContext } from 'react';
 
-/** Текст проблемы с push-уведомлениями (null — всё в порядке). */
-export const PushStatusContext = createContext<string | null>(null);
-export const usePushProblem = () => useContext(PushStatusContext);
+export interface PushStatus {
+  /** Текст проблемы с уведомлениями (null — всё в порядке). */
+  problem: string | null;
+  /** Если задано — кнопка «Включить уведомления» (в браузере разрешение спрашивается по нажатию). */
+  enable?: () => void;
+}
+
+export const PushStatusContext = createContext<PushStatus>({ problem: null });
+export const usePushStatus = () => useContext(PushStatusContext);

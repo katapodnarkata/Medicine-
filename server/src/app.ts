@@ -1,3 +1,4 @@
+import { resolve } from 'node:path';
 import express, { type NextFunction, type Request, type Response } from 'express';
 import { AppError, type Service, type UserDto } from './service.js';
 
@@ -12,13 +13,43 @@ function idParam(value: unknown): number {
   return id;
 }
 
-export function createApp(service: Service) {
+export interface AppOptions {
+  /** Открытый ключ Web Push, нужен браузеру для подписки на уведомления. */
+  vapidPublicKey?: string;
+  /** Папка со сборкой веб-приложения. */
+  webDir?: string;
+}
+
+export function createApp(service: Service, options: AppOptions = {}) {
   const app = express();
   app.disable('x-powered-by');
   app.use(express.json({ limit: '16kb' }));
 
+  if (options.webDir) {
+    const webDir = resolve(options.webDir);
+    app.use(
+      express.static(webDir, {
+        index: false,
+        setHeaders: (res, path) => {
+          // Service worker и манифест всегда проверяются заново, чтобы обновления доходили сразу.
+          if (path.endsWith('sw.js') || path.endsWith('.webmanifest')) res.setHeader('Cache-Control', 'no-cache');
+        },
+      }),
+    );
+    // Все адреса, кроме API, открывают веб-приложение (маршруты /call/5 и т.п. решает оно само).
+    app.get(/^(?!\/api\/|\/health$).*/, (_req, res) => {
+      res.setHeader('Cache-Control', 'no-cache');
+      res.sendFile(resolve(webDir, 'index.html'));
+    });
+  }
+
   app.get('/health', (_req, res) => {
     res.json({ ok: true });
+  });
+
+  app.get('/api/push/public-key', (_req, res) => {
+    if (!options.vapidPublicKey) throw new AppError(404, 'Веб-уведомления не настроены');
+    res.json({ publicKey: options.vapidPublicKey });
   });
 
   app.post('/api/register', (req, res) => {

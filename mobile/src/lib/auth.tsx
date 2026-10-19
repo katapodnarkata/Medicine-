@@ -1,4 +1,4 @@
-import * as SecureStore from 'expo-secure-store';
+import { storage } from './storage';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { api, setAuthToken, setUnauthorizedHandler } from './api';
 import type { User } from './types';
@@ -24,24 +24,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const setUser = useCallback((u: User) => {
     setUserState(u);
-    SecureStore.setItemAsync(USER_KEY, JSON.stringify(u)).catch(() => undefined);
+    storage.set(USER_KEY, JSON.stringify(u)).catch(() => undefined);
   }, []);
 
   const forget = useCallback(async () => {
     setAuthToken(null);
     setUserState(null);
-    await SecureStore.deleteItemAsync(TOKEN_KEY);
-    await SecureStore.deleteItemAsync(USER_KEY);
+    await storage.remove(TOKEN_KEY);
+    await storage.remove(USER_KEY);
   }, []);
 
   useEffect(() => {
     setUnauthorizedHandler(() => void forget());
     (async () => {
-      const token = await SecureStore.getItemAsync(TOKEN_KEY);
+      const token = await storage.get(TOKEN_KEY);
       if (token) {
         setAuthToken(token);
         // Сохранённый профиль позволяет открыть приложение сразу, даже без сети.
-        const cached = await SecureStore.getItemAsync(USER_KEY);
+        const cached = await storage.get(USER_KEY);
         if (cached) setUserState(JSON.parse(cached) as User);
       }
       setLoading(false);
@@ -52,7 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signIn = useCallback(
     async (token: string, u: User) => {
-      await SecureStore.setItemAsync(TOKEN_KEY, token);
+      await storage.set(TOKEN_KEY, token);
       setAuthToken(token);
       setUser(u);
     },

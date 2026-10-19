@@ -260,3 +260,14 @@ const styles = StyleSheet.create({
   badge: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 },
   badgeText: { fontSize: 13, fontWeight: '800' },
 });
+
+/** Плашка о проблеме с уведомлениями и, если можно, кнопка «Включить уведомления». */
+export function PushBanner({ problem, enable }: { problem: string | null; enable?: () => void }) {
+  if (!problem) return null;
+  return (
+    <Card style={{ backgroundColor: '#FFF4E5', borderWidth: 1, borderColor: '#F5C27A' }}>
+      <Text style={{ fontSize: 16, color: colors.text, lineHeight: 22 }}>⚠️ {problem}</Text>
+      {enable ? <Button title="🔔 Включить уведомления" onPress={enable} /> : null}
+    </Card>
+  );
+}

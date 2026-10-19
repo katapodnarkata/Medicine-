@@ -6,13 +6,11 @@ import { api, errorMessage } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { formatRemaining } from '../lib/format';
 import { useNow, usePolling } from '../lib/hooks';
-import { usePushProblem } from '../lib/pushStatus';
 
 export default function DispatcherHome() {
   const { user } = useAuth();
   const team = user?.team ?? null;
   const now = useNow();
-  const pushProblem = usePushProblem();
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
 
@@ -72,7 +70,6 @@ export default function DispatcherHome() {
       {activeCall ? <Muted>Новый вызов можно отправить после завершения текущего.</Muted> : null}
       {team && data && members.length === 0 ? <Muted>В команде нет участников — добавьте их.</Muted> : null}
       <ErrorText>{sendError ?? error}</ErrorText>
-      {pushProblem ? <Muted>⚠️ {pushProblem}</Muted> : null}
 
       {team ? (
         <>

@@ -1,8 +1,9 @@
 import { router } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Alert, View } from 'react-native';
+import { View } from 'react-native';
 import { Button, Card, ErrorText, Label, Loading, Muted, Screen, Title } from '../components/ui';
 import { api, errorMessage } from '../lib/api';
+import { confirmAction } from '../lib/confirm';
 import { useAuth } from '../lib/auth';
 import { usePolling } from '../lib/hooks';
 import type { User } from '../lib/types';
@@ -26,19 +27,19 @@ export default function TeamManage() {
   };
 
   const confirmRemove = (m: User) =>
-    Alert.alert('Убрать из команды?', `${m.name} больше не будет получать вызовы команды «${team?.name}».`, [
-      { text: 'Отмена', style: 'cancel' },
-      { text: 'Убрать', style: 'destructive', onPress: () => run(() => api.setUserTeam(m.id, null)) },
-    ]);
+    confirmAction(
+      'Убрать из команды?',
+      `${m.name} больше не будет получать вызовы команды «${team?.name}».`,
+      'Убрать',
+      () => void run(() => api.setUserTeam(m.id, null)),
+    );
 
   const confirmDelete = (m: User) =>
-    Alert.alert(
+    confirmAction(
       'Удалить участника?',
       `Пользователь ${m.name} будет полностью удалён и больше не будет получать вызовы. Уже отправленные вызовы не изменятся.`,
-      [
-        { text: 'Отмена', style: 'cancel' },
-        { text: 'Удалить', style: 'destructive', onPress: () => run(() => api.deleteUser(m.id)) },
-      ],
+      'Удалить',
+      () => void run(() => api.deleteUser(m.id)),
     );
 
   if (!team) {

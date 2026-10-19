@@ -1,9 +1,11 @@
 import Constants from 'expo-constants';
+import { Platform } from 'react-native';
 import type { Call, Role, Team, User } from './types';
 
+// Веб-приложение раздаётся тем же сервером, поэтому обращается к нему по относительному адресу.
 const API_URL = (
   process.env.EXPO_PUBLIC_API_URL ??
-  (Constants.expoConfig?.extra?.apiUrl as string | undefined) ??
+  (Platform.OS === 'web' ? '' : (Constants.expoConfig?.extra?.apiUrl as string | undefined)) ??
   'http://localhost:3000'
 ).replace(/\/+$/, '');
 
@@ -55,6 +57,7 @@ export const api = {
   me: () => request<User>('GET', '/api/me'),
   updateMe: (data: Partial<{ name: string; phone: string; role: Role; teamId: number | null }>) =>
     request<User>('PATCH', '/api/me', data),
+  pushPublicKey: () => request<{ publicKey: string }>('GET', '/api/push/public-key'),
   setPushToken: (token: string | null) => request<void>('PUT', '/api/me/push-token', { token }),
   logout: () => request<void>('POST', '/api/logout'),
   deleteMe: () => request<void>('DELETE', '/api/me'),

@@ -8,6 +8,12 @@ export interface Config {
   dbPath: string;
   seedTeams: string[];
   expoAccessToken?: string;
+  /** Папка со сборкой веб-приложения (PWA); сервер раздаёт её вместе с API. */
+  webDir?: string;
+  /** Ключи Web Push (VAPID). Если не заданы, создаются автоматически и хранятся рядом с базой. */
+  vapidPublicKey?: string;
+  vapidPrivateKey?: string;
+  vapidSubject: string;
 }
 
 export function loadConfig(): Config {
@@ -19,5 +25,9 @@ export function loadConfig(): Config {
       .map((s) => s.trim())
       .filter(Boolean),
     expoAccessToken: process.env.EXPO_ACCESS_TOKEN || undefined,
+    webDir: process.env.WEB_DIR || undefined,
+    vapidPublicKey: process.env.VAPID_PUBLIC_KEY || undefined,
+    vapidPrivateKey: process.env.VAPID_PRIVATE_KEY || undefined,
+    vapidSubject: process.env.VAPID_SUBJECT || 'mailto:admin@example.com',
   };
 }

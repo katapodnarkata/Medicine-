@@ -1,11 +1,9 @@
-import * as Notifications from 'expo-notifications';
-import { router, Stack } from 'expo-router';
+import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useRef, useState } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { colors, Loading } from '../components/ui';
 import { AuthProvider, useAuth } from '../lib/auth';
-import { callIdFromNotification, registerForPush } from '../lib/notifications';
+import { useOpenCallFromNotifications, usePushSetup } from '../lib/notifications';
 import { PushStatusContext } from '../lib/pushStatus';
 
 export default function RootLayout() {
@@ -21,7 +19,8 @@ export default function RootLayout() {
 
 function RootStack() {
   const { loading, user } = useAuth();
-  const pushProblem = usePushSetup(user?.id ?? null);
+  // Уведомления о вызовах нужны только участникам.
+  const pushStatus = usePushSetup(user?.role === 'participant' ? user.id : null);
   useOpenCallFromNotifications(!!user);
 
   if (loading) return <Loading />;
@@ -29,7 +28,7 @@ function RootStack() {
   const isParticipant = user?.role === 'participant';
 
   return (
-    <PushStatusContext.Provider value={pushProblem}>
+    <PushStatusContext.Provider value={pushStatus}>
       <Stack
         screenOptions={{
           headerStyle: { backgroundColor: colors.card },
@@ -61,56 +60,4 @@ function RootStack() {
       </Stack>
     </PushStatusContext.Provider>
   );
-}
-
-/** После входа регистрирует устройство для push-уведомлений. */
-function usePushSetup(userId: number | null): string | null {
-  const [problem, setProblem] = useState<string | null>(null);
-  useEffect(() => {
-    if (userId == null) return;
-    let cancelled = false;
-    const run = () =>
-      registerForPush().then((p) => {
-        if (!cancelled) setProblem(p);
-      });
-    void run();
-    // Токен устройства может смениться — отправляем новый на сервер.
-    const sub = Notifications.addPushTokenListener(() => void run());
-    return () => {
-      cancelled = true;
-      sub.remove();
-    };
-  }, [userId]);
-  return problem;
-}
-
-/**
- * Открывает экран вызова: при нажатии на уведомление (в том числе когда
- * приложение было закрыто) и сразу при получении вызова в открытом приложении.
- */
-function useOpenCallFromNotifications(signedIn: boolean) {
-  const handled = useRef(new Set<string>());
-
-  useEffect(() => {
-    if (!signedIn) return;
-    const open = (notification: Notifications.Notification) => {
-      const id = callIdFromNotification(notification);
-      const key = notification.request.identifier;
-      if (id == null || handled.current.has(key)) return;
-      handled.current.add(key);
-      router.navigate({ pathname: '/call/[id]', params: { id: String(id) } });
-    };
-
-    const last = Notifications.getLastNotificationResponse();
-    if (last) {
-      open(last.notification);
-      Notifications.clearLastNotificationResponse();
-    }
-    const received = Notifications.addNotificationReceivedListener(open);
-    const response = Notifications.addNotificationResponseReceivedListener((r) => open(r.notification));
-    return () => {
-      received.remove();
-      response.remove();
-    };
-  }, [signedIn]);
 }

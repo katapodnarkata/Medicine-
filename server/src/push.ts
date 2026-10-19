@@ -1,3 +1,5 @@
+import webpush from 'web-push';
+
 export interface PushMessage {
   to: string;
   title: string;
@@ -85,5 +87,76 @@ export class ExpoPushSender implements PushSender {
       const error = err instanceof Error ? err.message : String(err);
       return messages.map(() => ({ ok: false, error }));
     }
+  }
+}
+
+export interface VapidKeys {
+  publicKey: string;
+  privateKey: string;
+  /** Контакт владельца сервера для служб доставки (mailto: или https:). */
+  subject: string;
+}
+
+/** Push-подписка браузера хранится как JSON-строка вместо токена устройства. */
+export function isWebPushToken(token: string): boolean {
+  return token.startsWith('{');
+}
+
+/**
+ * Web Push для веб-приложения (PWA): работает в Chrome на Android и в Safari
+ * на iPhone (iOS 16.4+, приложение добавлено на экран «Домой»).
+ */
+export class WebPushSender implements PushSender {
+  constructor(private readonly vapid: VapidKeys) {}
+
+  async send(messages: PushMessage[]): Promise<PushResult[]> {
+    return Promise.all(messages.map((m) => this.sendOne(m)));
+  }
+
+  private async sendOne(m: PushMessage): Promise<PushResult> {
+    let subscription: webpush.PushSubscription;
+    try {
+      subscription = JSON.parse(m.to) as webpush.PushSubscription;
+    } catch {
+      return { ok: false, error: 'Некорректная подписка', deviceNotRegistered: true };
+    }
+    try {
+      await webpush.sendNotification(
+        subscription,
+        JSON.stringify({ title: m.title, body: m.body, data: m.data }),
+        { vapidDetails: this.vapid, TTL: 300, urgency: 'high' },
+      );
+      return { ok: true };
+    } catch (err) {
+      const statusCode = (err as { statusCode?: number }).statusCode;
+      return {
+        ok: false,
+        error: err instanceof Error ? err.message : String(err),
+        // 404/410: подписка удалена (приложение удалено или уведомления выключены).
+        deviceNotRegistered: statusCode === 404 || statusCode === 410,
+      };
+    }
+  }
+}
+
+/** Направляет каждое сообщение нужной службе по виду токена. */
+export class RoutingPushSender implements PushSender {
+  constructor(
+    private readonly expo: PushSender,
+    private readonly web: PushSender,
+  ) {}
+
+  async send(messages: PushMessage[]): Promise<PushResult[]> {
+    const webIdx: number[] = [];
+    const expoIdx: number[] = [];
+    messages.forEach((m, i) => (isWebPushToken(m.to) ? webIdx : expoIdx).push(i));
+    const [webResults, expoResults] = await Promise.all([
+      webIdx.length ? this.web.send(webIdx.map((i) => messages[i])) : Promise.resolve([]),
+      expoIdx.length ? this.expo.send(expoIdx.map((i) => messages[i])) : Promise.resolve([]),
+    ]);
+    const results: PushResult[] = new Array(messages.length);
+    webIdx.forEach((idx, k) => (results[idx] = webResults[k]));
+    expoIdx.forEach((idx, k) => (results[idx] = expoResults[k]));
+    return results;
   }
 }
