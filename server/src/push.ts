@@ -118,7 +118,7 @@ export class WebPushSender implements PushSender {
     try {
       subscription = JSON.parse(m.to) as webpush.PushSubscription;
     } catch {
-      return { ok: false, error: 'Некорректная подписка', deviceNotRegistered: true };
+      return { ok: false, error: 'מינוי התראות לא תקין', deviceNotRegistered: true };
     }
     try {
       await webpush.sendNotification(

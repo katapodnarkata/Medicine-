@@ -43,7 +43,7 @@ function CallState({ call }: { call: Call }) {
   const { date, time } = formatDateTime(call.createdAt);
   return (
     <Muted>
-      {date} {time} · {call.teamName} · {active ? `активен ещё ${formatRemaining(call.expiresAt - now)}` : 'завершён'}
+      {date} {time} · {call.teamName} · {active ? `פעילה עוד ${formatRemaining(call.expiresAt - now)}` : 'הסתיימה'}
     </Muted>
   );
 }
@@ -77,12 +77,12 @@ function ParticipantView({ call, onUpdate }: { call: Call; onUpdate: (call: Call
       <ErrorText>{error}</ErrorText>
       {seen ? (
         <View style={styles.confirmed}>
-          <Text style={styles.confirmedText}>✓ ВЫ ПОДТВЕРДИЛИ</Text>
+          <Text style={styles.confirmedText}>✓ אישרת</Text>
         </View>
       ) : active ? (
-        <Button title="Я УВИДЕЛ" variant="success" big busy={busy} onPress={acknowledge} style={styles.ackButton} />
+        <Button title="ראיתי" variant="success" big busy={busy} onPress={acknowledge} style={styles.ackButton} />
       ) : (
-        <Muted>Вызов завершён.</Muted>
+        <Muted>הקריאה הסתיימה.</Muted>
       )}
     </Screen>
   );
@@ -97,12 +97,12 @@ function DispatcherView({ call }: { call: Call }) {
       <Card>
         <CallText call={call} />
         <CallState call={call} />
-        <Muted>Диспетчер: {call.dispatcherName}</Muted>
+        <Muted>מוקדן: {call.dispatcherName}</Muted>
       </Card>
       {recipients ? (
         <>
           <Label>
-            Получатели · увидели {seenCount} из {recipients.length}
+            נמענים · אישרו {seenCount} מתוך {recipients.length}
           </Label>
           {recipients.map((r) => (
             <ListItem
@@ -114,7 +114,7 @@ function DispatcherView({ call }: { call: Call }) {
           ))}
         </>
       ) : (
-        <Muted>Данные о получателях хранятся 24 часа и уже удалены.</Muted>
+        <Muted>נתוני הנמענים נשמרים 24 שעות וכבר נמחקו.</Muted>
       )}
     </Screen>
   );

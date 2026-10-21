@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Оповещение команды",
+    "name": "התראה לצוות",
     "slug": "team-alert",
     "scheme": "teamalert",
     "version": "1.0.0",
@@ -53,11 +53,11 @@
     "web": {
       "output": "single",
       "favicon": "./assets/favicon.png",
-      "name": "Оповещение команды",
-      "shortName": "Оповещение",
+      "name": "התראה לצוות",
+      "shortName": "התראה לצוות",
       "themeColor": "#C62828",
       "backgroundColor": "#F4F5F7",
-      "lang": "ru"
+      "lang": "he"
     }
   }
 }

@@ -39,39 +39,39 @@ export default function Profile() {
   };
 
   const logout = () =>
-    confirmAction('Выйти?', 'На этом устройстве перестанут приходить вызовы.', 'Выйти', () => void signOut());
+    confirmAction('להתנתק?', 'קריאות יפסיקו להגיע למכשיר הזה.', 'התנתקות', () => void signOut());
 
   const confirmDelete = () =>
     confirmAction(
-      'Удалить аккаунт?',
-      'Ваши данные будут удалены с сервера, вызовы перестанут приходить. Это действие нельзя отменить.',
-      'Удалить',
+      'למחוק את החשבון?',
+      'הנתונים שלך יימחקו מהשרת וקריאות יפסיקו להגיע. אי אפשר לבטל את הפעולה.',
+      'מחיקה',
       () => void deleteAccount().catch((err) => setError(errorMessage(err))),
     );
 
   return (
     <Screen>
-      <Field label="Имя" value={name} onChangeText={setName} />
-      <Field label="Номер телефона" value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
-      <Label>Роль</Label>
+      <Field label="שם" value={name} onChangeText={setName} />
+      <Field label="מספר טלפון" value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
+      <Label>תפקיד</Label>
       <Segmented
         value={role}
         onChange={setRole}
         options={[
-          { value: 'participant', label: 'Участник' },
-          { value: 'dispatcher', label: 'Диспетчер' },
+          { value: 'participant', label: 'חבר צוות' },
+          { value: 'dispatcher', label: 'מוקדן' },
         ]}
       />
-      <Label>{role === 'dispatcher' ? 'Выбранная команда' : 'Текущая команда'}</Label>
-      <ListItem title="Без команды" selected={teamId === null} onPress={() => setTeamId(null)} />
+      <Label>{role === 'dispatcher' ? 'הצוות הנבחר' : 'הצוות הנוכחי'}</Label>
+      <ListItem title="ללא צוות" selected={teamId === null} onPress={() => setTeamId(null)} />
       {teams?.map((t) => (
         <ListItem key={t.id} title={t.name} selected={teamId === t.id} onPress={() => setTeamId(t.id)} />
       ))}
       <ErrorText>{error}</ErrorText>
-      {saved ? <Muted>✓ Изменения сохранены</Muted> : null}
-      <Button title="Сохранить" onPress={save} busy={busy} />
-      <Button title="Выйти" variant="secondary" onPress={logout} />
-      <Button title="Удалить аккаунт" variant="danger" onPress={confirmDelete} />
+      {saved ? <Muted>✓ השינויים נשמרו</Muted> : null}
+      <Button title="שמירה" onPress={save} busy={busy} />
+      <Button title="התנתקות" variant="secondary" onPress={logout} />
+      <Button title="מחיקת החשבון" variant="danger" onPress={confirmDelete} />
     </Screen>
   );
 }

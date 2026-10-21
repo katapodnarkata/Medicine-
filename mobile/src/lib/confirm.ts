@@ -7,7 +7,7 @@ export function confirmAction(title: string, message: string, actionLabel: strin
     return;
   }
   Alert.alert(title, message, [
-    { text: 'Отмена', style: 'cancel' },
+    { text: 'ביטול', style: 'cancel' },
     { text: actionLabel, style: 'destructive', onPress: onConfirm },
   ]);
 }

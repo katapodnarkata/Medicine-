@@ -42,12 +42,12 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
       body: body !== undefined ? JSON.stringify(body) : undefined,
     });
   } catch {
-    throw new ApiError(0, 'Нет связи с сервером');
+    throw new ApiError(0, 'אין חיבור לשרת');
   }
   if (res.status === 401 && authToken) onUnauthorized?.();
   if (res.status === 204) return undefined as T;
   const json = await res.json().catch(() => null);
-  if (!res.ok) throw new ApiError(res.status, json?.error ?? `Ошибка сервера (${res.status})`);
+  if (!res.ok) throw new ApiError(res.status, json?.error ?? `שגיאת שרת (${res.status})`);
   return json as T;
 }
 

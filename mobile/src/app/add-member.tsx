@@ -35,15 +35,15 @@ export default function AddMember() {
 
   return (
     <Screen>
-      <Field label="Поиск" value={query} onChangeText={setQuery} placeholder="Имя или телефон" />
+      <Field label="חיפוש" value={query} onChangeText={setQuery} placeholder="שם או טלפון" />
       <ErrorText>{actionError ?? error}</ErrorText>
       {!participants && !error ? <Loading /> : null}
-      {participants && candidates.length === 0 ? <Muted>Нет участников для добавления.</Muted> : null}
+      {participants && candidates.length === 0 ? <Muted>אין חברי צוות להוספה.</Muted> : null}
       {candidates.map((p) => (
         <ListItem
           key={p.id}
           title={p.name}
-          subtitle={p.team ? `${p.phone} · сейчас в «${p.team.name}», будет переведён` : `${p.phone} · без команды`}
+          subtitle={p.team ? `${p.phone} · כרגע ב"${p.team.name}", יועבר/תועבר` : `${p.phone} · ללא צוות`}
           onPress={() => add(p)}
         />
       ))}

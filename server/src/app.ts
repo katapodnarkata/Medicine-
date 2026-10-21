@@ -9,7 +9,7 @@ interface AuthedRequest extends Request {
 
 function idParam(value: unknown): number {
   const id = Number(value);
-  if (!Number.isInteger(id) || id <= 0) throw new AppError(400, 'Некорректный идентификатор');
+  if (!Number.isInteger(id) || id <= 0) throw new AppError(400, 'מזהה לא תקין');
   return id;
 }
 
@@ -48,7 +48,7 @@ export function createApp(service: Service, options: AppOptions = {}) {
   });
 
   app.get('/api/push/public-key', (_req, res) => {
-    if (!options.vapidPublicKey) throw new AppError(404, 'Веб-уведомления не настроены');
+    if (!options.vapidPublicKey) throw new AppError(404, 'התראות דפדפן לא הוגדרו');
     res.json({ publicKey: options.vapidPublicKey });
   });
 
@@ -61,7 +61,7 @@ export function createApp(service: Service, options: AppOptions = {}) {
     const header = req.header('authorization') ?? '';
     const token = header.startsWith('Bearer ') ? header.slice(7) : '';
     const user = token ? service.authenticate(token) : null;
-    if (!user) throw new AppError(401, 'Требуется регистрация');
+    if (!user) throw new AppError(401, 'נדרשת הרשמה');
     (req as AuthedRequest).user = user;
     (req as AuthedRequest).token = token;
     next();
@@ -132,7 +132,7 @@ export function createApp(service: Service, options: AppOptions = {}) {
   });
 
   app.use((_req, _res) => {
-    throw new AppError(404, 'Не найдено');
+    throw new AppError(404, 'לא נמצא');
   });
 
   app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
@@ -141,11 +141,11 @@ export function createApp(service: Service, options: AppOptions = {}) {
       return;
     }
     if (err instanceof SyntaxError) {
-      res.status(400).json({ error: 'Некорректный JSON' });
+      res.status(400).json({ error: 'JSON לא תקין' });
       return;
     }
     console.error(err);
-    res.status(500).json({ error: 'Внутренняя ошибка сервера' });
+    res.status(500).json({ error: 'שגיאה פנימית בשרת' });
   });
 
   return app;

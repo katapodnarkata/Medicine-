@@ -94,25 +94,29 @@ const USER_SELECT = `
   FROM users u LEFT JOIN teams t ON t.id = u.team_id`;
 
 export function normalizePhone(input: unknown): string {
-  if (typeof input !== 'string') throw new AppError(400, 'Укажите номер телефона');
+  if (typeof input !== 'string') throw new AppError(400, 'יש להזין מספר טלפון');
   let digits = input.replace(/\D/g, '');
-  // Российские номера: 8XXXXXXXXXX и XXXXXXXXXX приводятся к +7XXXXXXXXXX.
-  if (digits.length === 11 && digits.startsWith('8')) digits = `7${digits.slice(1)}`;
-  if (digits.length === 10 && !input.trim().startsWith('+')) digits = `7${digits}`;
-  if (digits.length < 10 || digits.length > 15) throw new AppError(400, 'Некорректный номер телефона');
+  // Израильские номера: 050-123-4567 и 972-50-123-4567 приводятся к +972501234567.
+  // Номер с «+» или с префиксом 00 считается уже международным.
+  if (!input.trim().startsWith('+')) {
+    if (digits.startsWith('00')) digits = digits.slice(2);
+    else if (digits.startsWith('0')) digits = `972${digits.slice(1)}`;
+    else if (!digits.startsWith('972')) digits = `972${digits}`;
+  }
+  if (digits.length < 10 || digits.length > 15) throw new AppError(400, 'מספר טלפון לא תקין');
   return `+${digits}`;
 }
 
-function cleanName(input: unknown, what = 'имя'): string {
-  if (typeof input !== 'string' || !input.trim()) throw new AppError(400, `Укажите ${what}`);
+function cleanName(input: unknown, what = 'שם'): string {
+  if (typeof input !== 'string' || !input.trim()) throw new AppError(400, `יש להזין ${what}`);
   const value = input.trim().replace(/\s+/g, ' ');
-  if (value.length > 100) throw new AppError(400, `Слишком длинное значение: ${what}`);
+  if (value.length > 100) throw new AppError(400, `ערך ארוך מדי: ${what}`);
   return value;
 }
 
 function parseRole(input: unknown): Role {
   if (input === 'dispatcher' || input === 'participant') return input;
-  throw new AppError(400, 'Выберите роль: диспетчер или участник');
+  throw new AppError(400, 'יש לבחור תפקיד: מוקדן או חבר צוות');
 }
 
 function hashToken(token: string): string {
@@ -194,7 +198,7 @@ export class Service {
 
   getUser(userId: number): UserDto {
     const row = this.db.prepare(`${USER_SELECT} WHERE u.id = ?`).get(userId) as UserRow | undefined;
-    if (!row) throw new AppError(404, 'Пользователь не найден');
+    if (!row) throw new AppError(404, 'המשתמש לא נמצא');
     return toUserDto(row);
   }
 
@@ -212,7 +216,7 @@ export class Service {
     if (input.phone !== undefined) {
       const phone = normalizePhone(input.phone);
       const other = this.db.prepare('SELECT id FROM users WHERE phone = ? AND id <> ?').get(phone, userId);
-      if (other) throw new AppError(409, 'Этот номер телефона уже используется другим пользователем');
+      if (other) throw new AppError(409, 'מספר הטלפון הזה כבר בשימוש של משתמש אחר');
       sets.push('phone = ?');
       values.push(phone);
     }
@@ -234,7 +238,7 @@ export class Service {
 
   setPushToken(userId: number, token: unknown): void {
     if (token !== null && (typeof token !== 'string' || !token || token.length > 4096)) {
-      throw new AppError(400, 'Некорректный push-токен');
+      throw new AppError(400, 'אסימון התראות לא תקין');
     }
     transaction(this.db, () => {
       // Одно устройство — один пользователь: если на телефоне сменили аккаунт,
@@ -259,9 +263,9 @@ export class Service {
 
   createTeam(actor: UserDto, name: unknown): TeamDto {
     this.requireDispatcher(actor);
-    const teamName = cleanName(name, 'название команды');
+    const teamName = cleanName(name, 'שם צוות');
     const exists = this.db.prepare('SELECT id FROM teams WHERE name = ?').get(teamName);
-    if (exists) throw new AppError(409, 'Команда с таким названием уже существует');
+    if (exists) throw new AppError(409, 'כבר קיים צוות בשם הזה');
     const res = this.db.prepare('INSERT INTO teams (name, created_at) VALUES (?, ?)').run(teamName, this.now());
     return { id: Number(res.lastInsertRowid), name: teamName, memberCount: 0 };
   }
@@ -292,7 +296,7 @@ export class Service {
   setUserTeam(actor: UserDto, userId: number, teamId: unknown): UserDto {
     this.requireDispatcher(actor);
     const target = this.getUser(userId);
-    if (target.role !== 'participant') throw new AppError(400, 'Управлять можно только участниками');
+    if (target.role !== 'participant') throw new AppError(400, 'אפשר לנהל רק חברי צוות');
     this.db
       .prepare('UPDATE users SET team_id = ?, updated_at = ? WHERE id = ?')
       .run(this.parseTeamId(teamId), this.now(), userId);
@@ -303,7 +307,7 @@ export class Service {
   deleteUser(actor: UserDto, userId: number): void {
     this.requireDispatcher(actor);
     const target = this.getUser(userId);
-    if (target.role !== 'participant') throw new AppError(400, 'Удалить можно только участника');
+    if (target.role !== 'participant') throw new AppError(400, 'אפשר למחוק רק חבר צוות');
     this.db.prepare('DELETE FROM users WHERE id = ?').run(userId);
   }
 
@@ -312,18 +316,18 @@ export class Service {
   /** Создаёт вызов для выбранной диспетчером команды (п.6, п.11–13). */
   createCall(actor: UserDto, input: { kind?: unknown; place?: unknown }): CallDto {
     this.requireDispatcher(actor);
-    if (!actor.team) throw new AppError(400, 'Сначала выберите команду');
+    if (!actor.team) throw new AppError(400, 'קודם יש לבחור צוות');
     let kind: CallKind;
     let place: string | null = null;
     if (input.kind === 'car' || input.kind === undefined) {
       kind = 'car';
     } else if (input.kind === 'place') {
-      place = cleanName(input.place, 'место встречи');
-      if (place.length > 200) throw new AppError(400, 'Слишком длинное описание места');
+      place = cleanName(input.place, 'מקום מפגש');
+      if (place.length > 200) throw new AppError(400, 'תיאור המקום ארוך מדי');
       kind = place.toLowerCase() === CAR_PLACE.toLowerCase() ? 'car' : 'place';
       if (kind === 'car') place = null;
     } else {
-      throw new AppError(400, 'Неизвестный тип вызова');
+      throw new AppError(400, 'סוג קריאה לא מוכר');
     }
 
     const now = this.now();
@@ -336,13 +340,13 @@ export class Service {
         .get(actor.id, team.id, now) as { id: number; expires_at: number } | undefined;
       if (active) {
         const left = Math.ceil((active.expires_at - now) / 1000);
-        throw new AppError(409, `Предыдущий вызов ещё активен (осталось ${left} с)`);
+        throw new AppError(409, `הקריאה הקודמת עדיין פעילה (נותרו ${left} שניות)`);
       }
       // Снимок состава команды на момент отправки (п.13).
       const members = this.db
         .prepare("SELECT id, name, phone, push_token FROM users WHERE team_id = ? AND role = 'participant'")
         .all(team.id) as { id: number; name: string; phone: string; push_token: string | null }[];
-      if (members.length === 0) throw new AppError(400, 'В выбранной команде нет участников');
+      if (members.length === 0) throw new AppError(400, 'אין חברים בצוות הנבחר');
 
       const res = this.db
         .prepare(
@@ -368,7 +372,7 @@ export class Service {
       .prepare('SELECT * FROM call_recipients WHERE call_id = ? AND push_token IS NOT NULL')
       .all(callId) as unknown as RecipientRow[];
     const noToken = this.db.prepare(
-      "UPDATE call_recipients SET push_error = 'Нет push-токена' WHERE call_id = ? AND push_token IS NULL",
+      "UPDATE call_recipients SET push_error = 'אין אסימון התראות' WHERE call_id = ? AND push_token IS NULL",
     );
     noToken.run(callId);
     if (recipients.length === 0) return;
@@ -399,12 +403,12 @@ export class Service {
     const row = this.db
       .prepare('SELECT * FROM calls WHERE id = ? AND created_at > ?')
       .get(callId, now - HISTORY_TTL_MS) as CallRow | undefined;
-    if (!row) throw new AppError(404, 'Вызов не найден');
+    if (!row) throw new AppError(404, 'הקריאה לא נמצאה');
     if (actor.role === 'dispatcher') return this.callDto(row, now, true);
     const mine = this.db
       .prepare('SELECT acknowledged_at FROM call_recipients WHERE call_id = ? AND user_id = ?')
       .get(callId, actor.id) as { acknowledged_at: number | null } | undefined;
-    if (!mine) throw new AppError(404, 'Вызов не найден');
+    if (!mine) throw new AppError(404, 'הקריאה לא נמצאה');
     return { ...this.callDto(row, now, false), myStatus: mine.acknowledged_at ? 'seen' : 'pending' };
   }
 
@@ -439,8 +443,8 @@ export class Service {
           .prepare('SELECT acknowledged_at FROM call_recipients WHERE call_id = ? AND user_id = ?')
           .get(callId, actor.id) as { acknowledged_at: number | null } | undefined)
       : undefined;
-    if (!call || !recipient) throw new AppError(404, 'Вызов не найден');
-    if (call.expires_at <= now) throw new AppError(409, 'Вызов уже завершён');
+    if (!call || !recipient) throw new AppError(404, 'הקריאה לא נמצאה');
+    if (call.expires_at <= now) throw new AppError(409, 'הקריאה כבר הסתיימה');
     if (!recipient.acknowledged_at) {
       this.db
         .prepare('UPDATE call_recipients SET acknowledged_at = ? WHERE call_id = ? AND user_id = ?')
@@ -506,13 +510,13 @@ export class Service {
   private parseTeamId(input: unknown): number | null {
     if (input === null) return null;
     const id = Number(input);
-    if (!Number.isInteger(id)) throw new AppError(400, 'Некорректная команда');
+    if (!Number.isInteger(id)) throw new AppError(400, 'צוות לא תקין');
     const team = this.db.prepare('SELECT id FROM teams WHERE id = ?').get(id);
-    if (!team) throw new AppError(404, 'Команда не найдена');
+    if (!team) throw new AppError(404, 'הצוות לא נמצא');
     return id;
   }
 
   private requireDispatcher(actor: UserDto): void {
-    if (actor.role !== 'dispatcher') throw new AppError(403, 'Действие доступно только диспетчеру');
+    if (actor.role !== 'dispatcher') throw new AppError(403, 'הפעולה זמינה רק למוקדן');
   }
 }

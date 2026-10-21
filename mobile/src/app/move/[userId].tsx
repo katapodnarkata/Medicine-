@@ -25,15 +25,14 @@ export default function MoveMember() {
   return (
     <Screen>
       <Muted>
-        {name ? `${name}: ` : ''}будущие вызовы будут приходить только от новой команды. Уже отправленные вызовы не
-        изменятся.
+        {name ? `${name}: ` : ''}קריאות עתידיות יגיעו רק מהצוות החדש. קריאות שכבר נשלחו לא ישתנו.
       </Muted>
       <ErrorText>{actionError ?? error}</ErrorText>
       {!teams && !error ? <Loading /> : null}
       {teams
         ?.filter((t) => t.id !== user?.team?.id)
         .map((t) => (
-          <ListItem key={t.id} title={t.name} subtitle={`Участников: ${t.memberCount}`} onPress={() => move(t.id)} />
+          <ListItem key={t.id} title={t.name} subtitle={`חברי צוות: ${t.memberCount}`} onPress={() => move(t.id)} />
         ))}
     </Screen>
   );

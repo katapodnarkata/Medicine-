@@ -13,4 +13,4 @@ export function formatRemaining(ms: number): string {
   return `${Math.floor(total / 60)}:${pad(total % 60)}`;
 }
 
-export const ROLE_LABEL = { dispatcher: 'Диспетчер', participant: 'Участник' } as const;
+export const ROLE_LABEL = { dispatcher: 'מוקדן', participant: 'חבר צוות' } as const;

@@ -23,8 +23,8 @@ Notifications.setNotificationHandler({
 async function ensureAndroidChannel() {
   if (Platform.OS !== 'android') return;
   await Notifications.setNotificationChannelAsync(CALL_CHANNEL_ID, {
-    name: 'Вызовы',
-    description: 'Срочные вызовы команды',
+    name: 'קריאות',
+    description: 'קריאות דחופות לצוות',
     importance: Notifications.AndroidImportance.MAX,
     sound: 'default',
     vibrationPattern: [0, 600, 300, 600, 300, 600],
@@ -46,20 +46,20 @@ function projectId(): string | undefined {
  */
 async function registerForPush(): Promise<string | null> {
   await ensureAndroidChannel();
-  if (!Device.isDevice) return 'Push-уведомления работают только на реальном устройстве';
+  if (!Device.isDevice) return 'התראות פועלות רק במכשיר אמיתי';
 
   let { status } = await Notifications.getPermissionsAsync();
   if (status !== 'granted') {
     ({ status } = await Notifications.requestPermissionsAsync());
   }
-  if (status !== 'granted') return 'Разрешите уведомления в настройках телефона, иначе вызовы не будут приходить';
+  if (status !== 'granted') return 'יש לאפשר התראות בהגדרות הטלפון, אחרת קריאות לא יגיעו';
 
   try {
     const { data } = await Notifications.getExpoPushTokenAsync({ projectId: projectId() });
     await api.setPushToken(data);
     return null;
   } catch (err) {
-    return `Не удалось зарегистрировать устройство для уведомлений: ${err instanceof Error ? err.message : err}`;
+    return `רישום המכשיר להתראות נכשל: ${err instanceof Error ? err.message : err}`;
   }
 }
 

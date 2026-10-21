@@ -10,14 +10,14 @@ self.addEventListener('push', (event) => {
   try {
     payload = event.data ? event.data.json() : {};
   } catch {
-    payload = { title: '🚨 ВЫЗОВ', body: event.data ? event.data.text() : '' };
+    payload = { title: '🚨 קריאה', body: event.data ? event.data.text() : '' };
   }
   const data = payload.data || {};
   const callId = data.callId;
 
   event.waitUntil(
     (async () => {
-      await self.registration.showNotification(payload.title || '🚨 ВЫЗОВ', {
+      await self.registration.showNotification(payload.title || '🚨 קריאה', {
         body: payload.body || '',
         icon: '/icons/icon-192.png',
         badge: '/icons/icon-192.png',

@@ -16,12 +16,12 @@ const isStandalone = () =>
   (navigator as Navigator & { standalone?: boolean }).standalone === true;
 
 const INSTALL_IOS =
-  'Чтобы получать вызовы на iPhone, добавьте приложение на экран «Домой»: в Safari нажмите «Поделиться» → «На экран „Домой“», затем откройте приложение со значка.';
+  'כדי לקבל קריאות באייפון, יש להוסיף את האפליקציה למסך הבית: ב-Safari לוחצים על "שיתוף" ← "הוספה למסך הבית", ואז פותחים את האפליקציה מהסמל.';
 const UNSUPPORTED =
-  'Этот браузер не умеет получать уведомления. Откройте приложение в Chrome (Android) или Safari (iPhone).';
+  'הדפדפן הזה לא תומך בהתראות. יש לפתוח את האפליקציה ב-Chrome (אנדרואיד) או ב-Safari (אייפון).';
 const DENIED =
-  'Уведомления запрещены. Разрешите их в настройках телефона для этого приложения, иначе вызовы не будут приходить.';
-const ASK = 'Уведомления не включены — без них вызовы не придут.';
+  'ההתראות חסומות. יש לאפשר אותן בהגדרות הטלפון עבור האפליקציה, אחרת קריאות לא יגיעו.';
+const ASK = 'ההתראות כבויות — בלעדיהן קריאות לא יגיעו.';
 
 function registerServiceWorker(): Promise<ServiceWorkerRegistration> | null {
   if (!('serviceWorker' in navigator)) return null;
@@ -49,7 +49,7 @@ async function subscribe(): Promise<void> {
     subscription = await withTimeout(
       reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: base64UrlToBytes(publicKey) }),
       20000,
-      'служба уведомлений не отвечает, проверьте интернет',
+      'שירות ההתראות לא מגיב, בדקו את החיבור לאינטרנט',
     );
   }
   await api.setPushToken(JSON.stringify(subscription));
@@ -86,7 +86,7 @@ export function usePushSetup(userId: number | null): PushStatus {
       setStatus({ problem: null });
     } catch (err) {
       setStatus({
-        problem: `Не удалось включить уведомления: ${errorMessage(err)}. Нажмите кнопку, чтобы попробовать снова.`,
+        problem: `הפעלת ההתראות נכשלה: ${errorMessage(err)}. לחצו על הכפתור כדי לנסות שוב.`,
         enable: () => void check(),
       });
     }

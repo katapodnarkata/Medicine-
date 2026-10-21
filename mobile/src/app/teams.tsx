@@ -44,15 +44,15 @@ export default function Teams() {
         <ListItem
           key={t.id}
           title={t.name}
-          subtitle={`Участников: ${t.memberCount}`}
+          subtitle={`חברי צוות: ${t.memberCount}`}
           selected={t.id === user?.team?.id}
           onPress={() => select(t.id)}
         />
       ))}
       <ErrorText>{actionError ?? error}</ErrorText>
-      <Label>Новая команда</Label>
-      <Field label="Название" value={newName} onChangeText={setNewName} placeholder="Команда 4" />
-      <Button title="Создать команду" variant="secondary" onPress={create} busy={busy} disabled={!newName.trim()} />
+      <Label>צוות חדש</Label>
+      <Field label="שם" value={newName} onChangeText={setNewName} placeholder="צוות 4" />
+      <Button title="יצירת צוות" variant="secondary" onPress={create} busy={busy} disabled={!newName.trim()} />
     </Screen>
   );
 }

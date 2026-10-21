@@ -28,24 +28,24 @@ export default function TeamManage() {
 
   const confirmRemove = (m: User) =>
     confirmAction(
-      'Убрать из команды?',
-      `${m.name} больше не будет получать вызовы команды «${team?.name}».`,
-      'Убрать',
+      'להוציא מהצוות?',
+      `${m.name} לא יקבל/תקבל יותר קריאות של הצוות "${team?.name}".`,
+      'הוצאה',
       () => void run(() => api.setUserTeam(m.id, null)),
     );
 
   const confirmDelete = (m: User) =>
     confirmAction(
-      'Удалить участника?',
-      `Пользователь ${m.name} будет полностью удалён и больше не будет получать вызовы. Уже отправленные вызовы не изменятся.`,
-      'Удалить',
+      'למחוק את חבר הצוות?',
+      `המשתמש ${m.name} יימחק לגמרי ולא יקבל יותר קריאות. קריאות שכבר נשלחו לא ישתנו.`,
+      'מחיקה',
       () => void run(() => api.deleteUser(m.id)),
     );
 
   if (!team) {
     return (
       <Screen>
-        <Muted>Сначала выберите команду.</Muted>
+        <Muted>קודם יש לבחור צוות.</Muted>
       </Screen>
     );
   }
@@ -53,24 +53,24 @@ export default function TeamManage() {
   return (
     <Screen>
       <Title>{team.name}</Title>
-      <Button title="+ Добавить участника" onPress={() => router.push('/add-member')} />
+      <Button title="+ הוספת חבר צוות" onPress={() => router.push('/add-member')} />
       <ErrorText>{actionError ?? error}</ErrorText>
       {!members ? <Loading /> : null}
-      {members?.length === 0 ? <Muted>В команде пока нет участников.</Muted> : null}
+      {members?.length === 0 ? <Muted>אין עדיין חברים בצוות.</Muted> : null}
       {members?.map((m) => (
         <Card key={m.id}>
           <Label>{m.phone}</Label>
           <Title>{m.name}</Title>
           <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
             <Button
-              title="Перевести"
+              title="העברה"
               variant="secondary"
               onPress={() =>
                 router.push({ pathname: '/move/[userId]', params: { userId: String(m.id), name: m.name } })
               }
             />
-            <Button title="Убрать" variant="secondary" onPress={() => confirmRemove(m)} />
-            <Button title="Удалить" variant="danger" onPress={() => confirmDelete(m)} />
+            <Button title="הוצאה" variant="secondary" onPress={() => confirmRemove(m)} />
+            <Button title="מחיקה" variant="danger" onPress={() => confirmDelete(m)} />
           </View>
         </Card>
       ))}

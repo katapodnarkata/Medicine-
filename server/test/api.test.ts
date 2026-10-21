@@ -36,10 +36,10 @@ async function setup(participants = 2) {
 
 describe('регистрация и профиль', () => {
   it('регистрирует диспетчера и участника (критерий 1)', async () => {
-    const d = await h.register('Анна', '8 (900) 111-22-33', 'dispatcher');
+    const d = await h.register('Анна', '050-111-2233', 'dispatcher');
     assert.equal(d.user.role, 'dispatcher');
-    assert.equal(d.user.phone, '+79001112233');
-    const p = await h.register('Борис', '+7 900 111 22 44', 'participant');
+    assert.equal(d.user.phone, '+972501112233');
+    const p = await h.register('Борис', '+972 50 111 2244', 'participant');
     assert.equal(p.user.role, 'participant');
     const bad = await h.api('POST', '/api/register', undefined, { name: 'X', phone: '123', role: 'participant' });
     assert.equal(bad.status, 400);
@@ -68,6 +68,17 @@ describe('регистрация и профиль', () => {
     // Тот же номер можно зарегистрировать заново — это будет новый аккаунт.
     const again = await h.register('Анна', '+79001112233', 'participant');
     assert.notEqual(again.user.id, d.user.id);
+  });
+
+  it('понимает разные записи израильского номера', async () => {
+    const forms = ['050-123-4567', '0501234567', '+972 50 123 4567', '972501234567', '00972501234567', '50-123-4567'];
+    for (const phone of forms) {
+      const res = await h.api('POST', '/api/register', undefined, { name: 'Тест', phone, role: 'participant' });
+      assert.equal(res.body.user.phone, '+972501234567', phone);
+    }
+    // Иностранный номер с «+» сохраняется как есть.
+    const foreign = await h.register('Гость', '+7 900 111 22 33', 'participant');
+    assert.equal(foreign.user.phone, '+79001112233');
   });
 
   it('не даёт занять чужой номер телефона', async () => {
@@ -128,22 +139,22 @@ describe('вызовы', () => {
     const { dispatcher, members } = await setup(3);
     const res = await h.api('POST', '/api/calls', dispatcher.token, { kind: 'car' });
     assert.equal(res.status, 201);
-    assert.equal(res.body.text, '🚨 ВЫЗОВ\n🚑 К машине');
+    assert.equal(res.body.text, '🚨 קריאה\n🚑 לאמבולנס');
     assert.equal(res.body.recipients.length, 3);
     assert.ok(res.body.recipients.every((r: any) => r.status === 'pending'));
     await flush();
     assert.equal(h.push.sent.length, 3);
     assert.deepEqual(h.push.sent.map((m) => m.to).sort(), members.map((_, i) => `ExponentPushToken[p${i}]`).sort());
-    assert.equal(h.push.sent[0].title, '🚨 ВЫЗОВ');
-    assert.equal(h.push.sent[0].body, '🚑 К машине');
+    assert.equal(h.push.sent[0].title, '🚨 קריאה');
+    assert.equal(h.push.sent[0].body, '🚑 לאמבולנס');
     assert.deepEqual(h.push.sent[0].data, { type: 'call', callId: res.body.id });
   });
 
   it('вызов с указанием места (критерий 6)', async () => {
     const { dispatcher, members } = await setup(1);
-    const res = await h.api('POST', '/api/calls', dispatcher.token, { kind: 'place', place: 'Главный вход, 2 этаж' });
+    const res = await h.api('POST', '/api/calls', dispatcher.token, { kind: 'place', place: 'כניסה ראשית, קומה 2' });
     assert.equal(res.status, 201);
-    assert.equal(res.body.text, '🚨 ВЫЗОВ\n📍 Главный вход, 2 этаж');
+    assert.equal(res.body.text, '🚨 קריאה\n📍 כניסה ראשית, קומה 2');
     const mine = await h.api('GET', `/api/calls/${res.body.id}`, members[0].token);
     assert.equal(mine.body.text, res.body.text);
     assert.equal(mine.body.recipients, undefined);

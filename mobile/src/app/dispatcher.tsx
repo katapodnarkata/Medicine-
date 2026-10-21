@@ -45,35 +45,35 @@ export default function DispatcherHome() {
   return (
     <Screen refreshing={loading && !!data} onRefresh={reload}>
       <Card>
-        <Label>Выбранная команда</Label>
+        <Label>הצוות הנבחר</Label>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
           <View style={{ flex: 1 }}>
-            <Title>{team?.name ?? 'Команда не выбрана'}</Title>
+            <Title>{team?.name ?? 'לא נבחר צוות'}</Title>
           </View>
-          <Button title={team ? 'Изменить' : 'Выбрать'} variant="secondary" onPress={() => router.push('/teams')} />
+          <Button title={team ? 'שינוי' : 'בחירה'} variant="secondary" onPress={() => router.push('/teams')} />
         </View>
       </Card>
 
       {activeCall ? (
         <Card style={{ borderWidth: 2, borderColor: '#C62828' }}>
-          <Label>Активный вызов · осталось {formatRemaining(activeCall.expiresAt - now)}</Label>
+          <Label>קריאה פעילה · נותרו {formatRemaining(activeCall.expiresAt - now)}</Label>
           <Title>{activeCall.text}</Title>
           <Button
-            title="Статусы получателей"
+            title="סטטוס הנמענים"
             onPress={() => router.push({ pathname: '/call/[id]', params: { id: String(activeCall.id) } })}
           />
         </Card>
       ) : null}
 
-      <Button title="ОТПРАВИТЬ ВЫЗОВ" variant="danger" big onPress={sendQuick} disabled={!canSend} busy={sending} />
-      <Button title="УКАЗАТЬ МЕСТО" big onPress={() => router.push('/place')} disabled={!canSend} />
-      {activeCall ? <Muted>Новый вызов можно отправить после завершения текущего.</Muted> : null}
-      {team && data && members.length === 0 ? <Muted>В команде нет участников — добавьте их.</Muted> : null}
+      <Button title="שליחת קריאה" variant="danger" big onPress={sendQuick} disabled={!canSend} busy={sending} />
+      <Button title="ציון מקום" big onPress={() => router.push('/place')} disabled={!canSend} />
+      {activeCall ? <Muted>אפשר לשלוח קריאה חדשה אחרי שהנוכחית תסתיים.</Muted> : null}
+      {team && data && members.length === 0 ? <Muted>אין חברים בצוות — יש להוסיף אותם.</Muted> : null}
       <ErrorText>{sendError ?? error}</ErrorText>
 
       {team ? (
         <>
-          <Label>Состав команды ({members.length})</Label>
+          <Label>חברי הצוות ({members.length})</Label>
           {members.map((m) => (
             <ListItem key={m.id} title={m.name} subtitle={m.phone} />
           ))}
@@ -81,9 +81,9 @@ export default function DispatcherHome() {
       ) : null}
 
       <View style={{ gap: 10, marginTop: 8 }}>
-        <Button title="Управление командой" variant="secondary" onPress={() => router.push('/team')} disabled={!team} />
-        <Button title="История вызовов" variant="secondary" onPress={() => router.push('/history')} />
-        <Button title="Профиль" variant="secondary" onPress={() => router.push('/profile')} />
+        <Button title="ניהול צוות" variant="secondary" onPress={() => router.push('/team')} disabled={!team} />
+        <Button title="היסטוריית קריאות" variant="secondary" onPress={() => router.push('/history')} />
+        <Button title="פרופיל" variant="secondary" onPress={() => router.push('/profile')} />
       </View>
     </Screen>
   );

@@ -14,10 +14,10 @@ export default function History() {
 
   return (
     <Screen refreshing={loading && !!calls} onRefresh={reload}>
-      <Muted>Вызовы за последние 3 дня. Статусы получателей хранятся 24 часа.</Muted>
+      <Muted>קריאות מ-3 הימים האחרונים. סטטוס הנמענים נשמר 24 שעות.</Muted>
       <ErrorText>{error}</ErrorText>
       {!calls && !error ? <Loading /> : null}
-      {calls?.length === 0 ? <Muted>Вызовов нет.</Muted> : null}
+      {calls?.length === 0 ? <Muted>אין קריאות.</Muted> : null}
       {calls?.map((c) => {
         const { date, time } = formatDateTime(c.createdAt);
         const seen = c.recipients?.filter((r) => r.status === 'seen').length;
@@ -33,11 +33,11 @@ export default function History() {
                 {date} · {time} · {c.teamName}
               </Label>
               <Title>{c.text}</Title>
-              <Muted>Диспетчер: {c.dispatcherName}</Muted>
+              <Muted>מוקדן: {c.dispatcherName}</Muted>
               {c.recipients ? (
                 <Muted>
-                  Увидели {seen} из {c.recipients.length}
-                  {c.active ? ' · активен' : ''}
+                  אישרו {seen} מתוך {c.recipients.length}
+                  {c.active ? ' · פעילה' : ''}
                 </Muted>
               ) : null}
             </Card>

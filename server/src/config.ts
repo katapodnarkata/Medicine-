@@ -20,7 +20,7 @@ export function loadConfig(): Config {
   return {
     port: Number(process.env.PORT ?? 3000),
     dbPath: process.env.DB_PATH ?? './data/team-alert.db',
-    seedTeams: (process.env.SEED_TEAMS ?? 'Команда 1,Команда 2,Команда 3')
+    seedTeams: (process.env.SEED_TEAMS ?? 'צוות 1,צוות 2,צוות 3')
       .split(',')
       .map((s) => s.trim())
       .filter(Boolean),

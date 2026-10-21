@@ -190,7 +190,7 @@ export function StatusBadge({ seen }: { seen: boolean }) {
   return (
     <View style={[styles.badge, { backgroundColor: seen ? colors.greenBg : colors.pendingBg }]}>
       <Text style={[styles.badgeText, { color: seen ? colors.green : colors.red }]}>
-        {seen ? 'УВИДЕЛ' : 'НЕ ПОДТВЕРДИЛ'}
+        {seen ? '✓ אושר' : 'לא אושר'}
       </Text>
     </View>
   );
@@ -267,7 +267,7 @@ export function PushBanner({ problem, enable }: { problem: string | null; enable
   return (
     <Card style={{ backgroundColor: '#FFF4E5', borderWidth: 1, borderColor: '#F5C27A' }}>
       <Text style={{ fontSize: 16, color: colors.text, lineHeight: 22 }}>⚠️ {problem}</Text>
-      {enable ? <Button title="🔔 Включить уведомления" onPress={enable} /> : null}
+      {enable ? <Button title="🔔 הפעלת התראות" onPress={enable} /> : null}
     </Card>
   );
 }

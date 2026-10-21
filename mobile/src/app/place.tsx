@@ -24,23 +24,23 @@ export default function Place() {
 
   return (
     <Screen>
-      <Muted>Выберите место встречи. Вызов будет отправлен выбранной команде сразу после выбора.</Muted>
-      <Button title="🚑 К машине" variant="danger" big onPress={() => send({ kind: 'car' })} disabled={busy} />
-      <Button title="📍 Другое" big variant={other ? 'primary' : 'secondary'} onPress={() => setOther(true)} />
+      <Muted>בחרו מקום מפגש. הקריאה תישלח לצוות הנבחר מיד לאחר הבחירה.</Muted>
+      <Button title="🚑 לאמבולנס" variant="danger" big onPress={() => send({ kind: 'car' })} disabled={busy} />
+      <Button title="📍 אחר" big variant={other ? 'primary' : 'secondary'} onPress={() => setOther(true)} />
       {other ? (
         <>
           <Field
-            label="Место встречи"
+            label="מקום מפגש"
             value={place}
             onChangeText={setPlace}
-            placeholder="Например: главный вход, 2 этаж"
+            placeholder="לדוגמה: כניסה ראשית, קומה 2"
             autoFocus
             maxLength={200}
             returnKeyType="send"
             onSubmitEditing={() => place.trim() && send({ kind: 'place', place: place.trim() })}
           />
           <Button
-            title="ОТПРАВИТЬ ВЫЗОВ"
+            title="שליחת קריאה"
             variant="danger"
             big
             busy={busy}

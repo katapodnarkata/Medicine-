@@ -15,7 +15,7 @@ export default function Register() {
 
   const submit = async () => {
     if (!name.trim() || !phone.trim() || !role) {
-      setError('Заполните имя, номер телефона и выберите роль');
+      setError('יש למלא שם, מספר טלפון ולבחור תפקיד');
       return;
     }
     setBusy(true);
@@ -33,28 +33,28 @@ export default function Register() {
 
   return (
     <Screen>
-      <Title>Оповещение команды</Title>
-      <Muted>Зарегистрируйтесь, чтобы получать и отправлять вызовы команды.</Muted>
-      <Field label="Имя" value={name} onChangeText={setName} placeholder="Иван Иванов" autoComplete="name" />
+      <Title>התראה לצוות</Title>
+      <Muted>הירשמו כדי לקבל ולשלוח קריאות לצוות.</Muted>
+      <Field label="שם" value={name} onChangeText={setName} placeholder="ישראל ישראלי" autoComplete="name" />
       <Field
-        label="Номер телефона"
+        label="מספר טלפון"
         value={phone}
         onChangeText={setPhone}
-        placeholder="+7 900 000-00-00"
+        placeholder="050-123-4567"
         keyboardType="phone-pad"
         autoComplete="tel"
       />
-      <Label>Роль</Label>
+      <Label>תפקיד</Label>
       <Segmented
         value={role}
         onChange={setRole}
         options={[
-          { value: 'participant', label: 'Участник' },
-          { value: 'dispatcher', label: 'Диспетчер' },
+          { value: 'participant', label: 'חבר צוות' },
+          { value: 'dispatcher', label: 'מוקדן' },
         ]}
       />
       <ErrorText>{error}</ErrorText>
-      <Button title="Зарегистрироваться" onPress={submit} busy={busy} />
+      <Button title="הרשמה" onPress={submit} busy={busy} />
     </Screen>
   );
 }
